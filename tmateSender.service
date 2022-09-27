@@ -3,7 +3,9 @@ Description=Send tmate session id over telegram
 After=network.target
 
 [Service]
-ExecStart=/usr/bin/local/tmateSender.sh
+User=fork
+WorkingDirectory=/home/fork/
+ExecStart=/usr/bin/tmateSender
 Restart=always
 
 [Install]
