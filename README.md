@@ -17,8 +17,6 @@ Arch and derivatives:
 git clone url && cd amogusmate
 python -m venv .venv && source .venv/bin/activate
 pip3 install argparse
-export BOT_TOKEN="your bot token"
-export CHAT_ID="your chat id"
 sudo python install.py --install --systemd
 ```
 
