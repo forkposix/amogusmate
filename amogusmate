@@ -15,8 +15,6 @@ SLEEP_INTERVAL=30 # 30 seconds
 SITE=google.com   # SITE to check against
 
 # Telegram Credentials
-TOKEN="" # bot token
-CHAT_ID="" # your telegram chat id
 URL="https://api.telegram.org/bot$TOKEN/sendMessage"
 
 # Interface

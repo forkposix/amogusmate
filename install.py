@@ -4,7 +4,8 @@ import os, sys
 UnixUser = os.environ["USER"]
 UnixHome = os.path.expanduser("~")
 UnitFile = "/etc/systemd/system/amogusmate.service"
-amogusmate = "/usr/bin/amogusmate"
+amogusmate_path = "/usr/bin/amogusmate"
+amogusmate_file = "amogusmate"
 
 # check root permissions
 if os.geteuid() != 0:
@@ -13,7 +14,7 @@ if os.geteuid() != 0:
 elif not sys.platform.startswith("linux"):
     print("Error: This script is for Linux only!")
     sys.exit(1)
-    
+
 # check dependencies
 Dependencies = ["tmate", "curl", "tmux"]
 while True:
@@ -41,11 +42,26 @@ WantedBy=multi-user.target
 
 # install
 
+def add_token_chatid(file):
+    print("Please enter your telegram bot token:")
+    token = input()
+    print("Please enter your telegram chat id:")
+    chatid = input()
+    # add bot token to line 18, chat_id to line 19. dont touch anything other
+    with open(file, "r") as f:
+        lines = f.readlines()
+    lines[17] = f"TOKEN={token}\n"
+    lines[18] = f"CHAT_ID={chatid}\n"
+    with open(file, "w") as f:
+        f.writelines(lines)
+
 def install_amogusmate():
     if os.path.exists(f"{UnitFile}") and os.path.isfile(f"{UnitFile}"):
         os.remove(f"{UnitFile}")
     with open(f"{UnitFile}", "w") as f:
         f.write(SystemdUnit)
+    add_token_chatid(amogusmate_file)
+    os.system(f"sudo install amogusmate {amogusmate_path}")
     os.system("systemctl daemon-reload")
     os.system("systemctl enable --now amogusmate")
 
@@ -54,9 +70,10 @@ def uninstall_amogusmate():
         os.system("systemctl daemon-reload")
         os.system("systemctl disable --now amogusmate")
         os.remove(f"{UnitFile}")
-        os.remove(f"{amogusmate}")
+        os.remove(f"{amogusmate_path}")
 
 def main():
+    import argparse
     parser = argparse.ArgumentParser(description="amogusmate installer")
     parser.add_argument("--install", action="store_true", help="install amogusmate")
     parser.add_argument("--uninstall", action="store_true", help="uninstall amogusmate")
