@@ -4,46 +4,34 @@
 
 ## INSTALLATION
 
-- Install dependencies
+### Install dependencies
 
+Debian & Ubuntu etc.:
+`sudo apt install tmate curl tmux`
+
+Arch and derivatives:
+`sudo pacman -S tmate curl tmux`
+
+## quick setup
 ```bash
-$ sudo apt install tmate
+git clone url && cd amogusmate
+python -m venv .venv && source .venv/bin/activate
+pip3 install argparse
+sudo python install.py --install --systemd
 ```
 
-## SETUP
-
-Start by cloning this repo.
-
-- Create telegram_bot using [Bot Father](https://t.me/botfather)  
-[Guide](https://core.telegram.org/bots#6-botfather)
-
--  Get your chatID. Use this [bot](https://t.me/my_id_bot)
-
-- Edit `tmateSender.sh`
-
-edit token, chatID and network interface.
-
-```txt
-...
-18 TOKEN= your-telegram-bot-token
-19 CHAT_ID= chat-id
-...
-23 INTF= main-interface
-...
+## Uninstall
+```bash
+sudo python amogusmate.py --uninstall
 ```
-
-- Add script to cron to start at reboot
-
-```txt
-@reboot ~/path/tmateSender.sh
-```
-
-## CUSTOMIZATION
-
-- Change greeting
 
 
 ### TO DO 
-- [ ] Use systemd than cron job
-- [ ] script explanation
+- [X] Use systemd than cron job
+- [X] Add install.py
+- [X] Add systemd service
+- [X] Add install/uninstall option
+- [ ] Script explanation
 - [ ] Write usecase
+- [ ] Port amogusmate to python
+- [ ] Reformat Message to be more readable
