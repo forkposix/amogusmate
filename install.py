@@ -50,8 +50,8 @@ def add_token_chatid(file):
     # add bot token to line 18, chat_id to line 19. dont touch anything other
     with open(file, "r") as f:
         lines = f.readlines()
-    lines[17] = f"TOKEN = \"{token}\"\n"
-    lines[18] = f"CHAT_ID = \"{chatid}\"\n"
+    lines[17] = f"TOKEN={token}\n"
+    lines[18] = f"CHAT_ID={chatid}\n"
     with open(file, "w") as f:
         f.writelines(lines)
 
