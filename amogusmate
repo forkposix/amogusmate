@@ -4,110 +4,26 @@
 # then waits till connection comes back again
 # exits tmate session 
 # creates a new tmate session and send session id using a telegram bot
-
-TIME=$(date +"%c")
-DOWN_TIME=0
-LAST_SEEN=$(date +"%s")
-
-MAX_DOWN_TIME=1200 # 20 minutes
-SLEEP_INTERVAL=30 # 30 seconds
-
-SITE=google.com   # SITE to check against
-
-# Telegram Credentials
+#!/bin/bash
+set -x
+TOKEN=""
+CHAT_ID=""
 URL="https://api.telegram.org/bot$TOKEN/sendMessage"
 
-# Interface
-INTF=''
 
-BOOT_MESSAGE="Greetings" # Greeting Message
-POWERED_ON=1
-
-
-sendMessage () {
-
-	#stop previous session of tmate
-	tmate -S /tmp/tmate.sock kill-session 2> /dev/null
-
-	#start a new tmate session
-	tmate -S /tmp/tmate.sock new-session -d 2> /dev/null
-	tmate -S /tmp/tmate.sock wait tmate-ready 2> /dev/null
-
-	#extract the session id
-	WEB_RO=$(tmate -S /tmp/tmate.sock display -p '#{tmate_web_ro}')
-	SSH_RO=$(tmate -S /tmp/tmate.sock display -p '#{tmate_ssh_ro}')
-	SSH_RW=$(tmate -S /tmp/tmate.sock display -p '#{tmate_ssh}')
-	WEB_RW=$(tmate -S /tmp/tmate.sock display -p '#{tmate_web}')
-	LOCAL_IPV4=$(ip address show eth0 | grep "inet\b" | sed "s/^ *//" | cut -d ' ' -f 2)
-
-	TIME=$(date +"%c")
-	# compose the message
-	MESSAGE="\[ $TIME \]
-	\\- Web Readonly ||\`$WEB_RO\`||
-	\\- Ssh Readonly ||\`$SSH_RO\`||
-	\\- Web ||\`$WEB_RW\`||
-	\\- Ssh ||\`$SSH_RW\`||
-	\\- IPV4 ||\`$LOCAL_IPV4\`||"
-
-	#email the session id - changed to telegram
-	curl -s -X POST $URL -d chat_id=$CHAT_ID -d text="$MESSAGE" -d parse_mode=MarkdownV2 2> /dev/null
-}
-
-while [ true ]
-do # infintely run the script
-
-	if [[ $POWERED_ON -eq 0 ]] ; then # checking if connection is down
-		if ! ping -c 1 "$SITE" ;then
-			DOWN_TYPE="CE"
-			DOWN_TIME=$(( $(date +"%s") - $LAST_SEEN ))
-		elif ! ls /tmp/tmate.sock; then
-			DOWN_TYPE="TK"
-			DOWN_TIME=1201
-		fi
-	else
-
-		if [[ $POWERED_ON -eq 1 ]]  ; then 
-			curl -s -X POST $URL -d chat_id=$CHAT_ID -d text="$BOOT_MESSAGE"
-			sendMessage
-			POWERED_ON=0
-		fi
-
-		DOWN_TIME=0
-		LAST_SEEN=$(date +"%s")
-	fi
-
-	sleep $SLEEP_INTERVAL # lay low 
-
-	if [ $DOWN_TIME -ge $MAX_DOWN_TIME ]; then
-		if ping -c 1 "$SITE" && [[ $DOWN_TYPE == "TK" ]]; then
-		text="[$(date +"%c")]
-		- Session was killed. But it was automagically revived by someone."
-			curl -s -X POST $URL -d chat_id=$CHAT_ID -d text="$text"
-			sendMessage
-		elif [[ $DOWN_TYPE == "CE" ]] && ls /tmp/tmate.sock ; then
-			while [ ! nc -zw1 google.com 443 ]; do
-                                # loop until connection comes up
-                                sleep $SLEEP_INTERVAL # sleep for two minutes
-                        done
-		text="[$(date +"%c")]
-		- A connection error has occurred. But one of our employees miraculously noticed and fixed it."
-			curl -s -X POST $URL -d chat_id=$CHAT_ID -d text="$text"
-			sendMessage
-		else
-		text="[$(date +"%c")]
-		- Our employees discovered an unexpected error. You may need attention."
-			curl -s -X POST $URL -d chat_id=$CHAT_ID -d text="$text"
-			sendMessage
-		fi
-#		sleep $(($SLEEP_INTERVAL * 10)) # sleeps for 30 seconds
-		sleep $(($SLEEP_INTERVAL)) # sleeps for 30 seconds
-
-		# reset everything
-		DOWN_TIME=0
-		DOWN_TYPE=0
-		LAST_SEEN=$(date +"%s")
-
-	fi
-
+export PATH=$PATH:$PWD
+while true ; do
+    killall tmate
+    tmate -S /tmp/tmate.sock new-session -d
+    tmate -S /tmp/tmate.sock wait tmate-ready
+    export MESSAGE=$(tmate -S /tmp/tmate.sock display -p '#{tmate_ssh}' 2>&1)
+    curl -s -X POST $URL -d chat_id=${CHAT_ID} -d text="${MESSAGE}"  2> /dev/null
+    while ls /tmp/tmate.sock ; do
+        new_message=$(tmate -S /tmp/tmate.sock display -p '#{tmate_ssh}' 2>&1)
+        if [[ "${new_message}" != "${MESSAGE}" ]] ; then
+            export MESSAGE="${new_message}"
+            curl -s -X POST $URL -d chat_id=${CHAT_ID} -d text="${MESSAGE}"  2> /dev/null
+        fi
+  sleep 10
+    done
 done
-
